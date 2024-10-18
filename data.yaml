@@ -1,0 +1,5 @@
+train: E:\PyDev\yolo\.venv\dataset\IIIT5K\train  # 训练集路径
+val: E:\PyDev\yolo\.venv\dataset\IIIT5K\train      # 验证集路径
+test: E:\PyDev\yolo\.venv\dataset\IIIT5K\test
+nc: 1                      # 类别数量（这里假设只有一个类别 "text"）
+names: ['text']            # 类别名称
