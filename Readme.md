@@ -1,4 +1,4 @@
-Scene Text Recognition System
+#Scene Text Recognition Performance with YOLOv8 and PaddleOCR
 
 ## Overview
 This project is a comprehensive scene text recognition (STR) system that integrates PyQt for the user interface, YOLOv8 for text detection, and PaddleOCR for multilingual text recognition. It supports efficient image preprocessing, CUDA-accelerated recognition, and flexible text region selection, suitable for various applications like document digitization, autonomous driving, and digital content processing.
