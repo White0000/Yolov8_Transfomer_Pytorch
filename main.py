@@ -12,7 +12,7 @@ import os
 from datetime import datetime
 import matplotlib.pyplot as plt
 
-# 检查 PyTorch 和 CUDA 是否可用
+
 torch_available = False
 try:
     import torch
@@ -54,7 +54,7 @@ class TextRecognitionApp(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
-        self.yolo_model_path = 'v8model/yolov8n.pt'  # 替换为你的YOLO模型路径
+        self.yolo_model_path = 'v8model/yolov8n.pt'  # 替换YOLO模型路径
         self.signals = WorkerSignals()
         self.signals.result.connect(self.show_result)
         self.signals.progress.connect(self.update_progress)
@@ -198,49 +198,65 @@ class TextRecognitionApp(QWidget):
         self.display_image(img_copy)
 
     def train_model(self):
+        # 检查 PyTorch 是否可用，如果不可用则显示错误对话框并退出函数
         if not torch_available:
             self.show_error_dialog("PyTorch 未正确加载，无法训练模型。")
             return
+
+        # 在新线程中启动训练过程，以保持用户界面的响应性
         train_thread = threading.Thread(target=self.train_yolo_model)
         train_thread.start()
 
     def train_yolo_model(self):
         try:
+            # 使用指定的路径加载 YOLO 模型
             model = YOLO(self.yolo_model_path)
             self.signals.console_output.emit("开始训练模型...\n")
+
+            # 使用给定的参数训练模型
             results = model.train(
-                data='data.yaml',
-                epochs=50,
-                batch=16,
-                imgsz=640,
-                device=0 if torch.cuda.is_available() else 'cpu'
+                data='data.yaml',  # 数据集配置文件的路径
+                epochs=50,  # 训练的轮次
+                batch=16,  # 训练的批大小
+                imgsz=640,  # 模型使用的图像大小
+                device=0 if torch.cuda.is_available() else 'cpu'  # 如果可用则使用 GPU，否则使用 CPU
             )
+
+            # 保存训练好的模型权重
             model.save(self.yolo_model_path)
             self.signals.console_output.emit("训练完成！模型已保存！\n")
             self.signals.progress.emit(100)
 
-            # 绘制准确率和损失图像
+            # 绘制训练结果，如准确率和损失
             self.plot_training_results(results)
         except Exception as e:
+            # 如果训练过程中发生错误，发送错误信息
             self.signals.error.emit(f"训练时出现错误: {str(e)}")
 
     def test_model(self):
+        # 检查 PyTorch 是否可用，如果不可用则显示错误对话框并退出函数
         if not torch_available:
             self.show_error_dialog("PyTorch 未正确加载，无法测试模型。")
             return
+
+        # 在新线程中启动测试过程，以保持用户界面的响应性
         test_thread = threading.Thread(target=self.test_yolo_model)
         test_thread.start()
 
     def test_yolo_model(self):
         try:
+            # 使用指定的路径加载 YOLO 模型
             model = YOLO(self.yolo_model_path)
+
+            # 验证模型并收集结果
             results = model.val()
             self.signals.console_output.emit(f"测试完成！\n{results}")
         except Exception as e:
+            # 如果测试过程中发生错误，发送错误信息
             self.signals.error.emit(f"测试时出现错误: {str(e)}")
 
     def plot_training_results(self, results):
-        # 绘制训练过程中准确率和损失的变化图
+        # 绘制训练损失和验证准确率随轮次的变化图
         epochs = range(len(results['train_loss']))
         plt.figure()
         plt.plot(epochs, results['train_loss'], 'r', label='Training loss')
@@ -253,35 +269,43 @@ class TextRecognitionApp(QWidget):
         plt.show()
 
     def start_recognition(self):
+        # 在新线程中启动图像识别过程，以保持用户界面的响应性
         recognition_thread = threading.Thread(target=self.process_image)
         recognition_thread.start()
 
     def process_image(self):
         if self.selected_roi is not None:
             start_time = time.time()
-            self.signals.progress.emit(10)
+            self.signals.progress.emit(10)  # 更新进度条
+
             try:
+                # 使用 PaddleOCR 识别选定区域的文本
                 result_text = self.recognize_text_with_paddleocr(self.selected_roi)
                 self.recognized_text = result_text
                 elapsed_time = time.time() - start_time
                 self.signals.console_output.emit(f"识别完成！用时: {elapsed_time:.2f}秒\n")
                 self.signals.result.emit("识别完成！")
-                self.signals.progress.emit(100)
-                self.export_button.setEnabled(True)
+                self.signals.progress.emit(100)  # 将进度设置为完成
+                self.export_button.setEnabled(True)  # 识别完成后启用导出按钮
             except Exception as e:
+                # 如果识别过程中发生错误，发送错误信息
                 self.signals.error.emit(f"识别时出现错误: {str(e)}")
 
     def recognize_text_with_paddleocr(self, image):
+        # 使用 PaddleOCR 识别给定图像中的文本
         result = ocr.ocr(image, cls=True)
         text = ''
         for line in result:
             for word_info in line:
-                text += word_info[1][0] + ' '
+                text += word_info[1][0] + ' '  # 追加识别的单词
         return text.strip()
 
     def recognize_text_with_transformer(self, image):
         if trocr_processor and trocr_model:
+            # 将图像转换为张量并移动到适当的设备（GPU/CPU）
             image_tensor = torch.tensor(image).unsqueeze(0).to("cuda" if torch.cuda.is_available() else "cpu")
+
+            # 使用 transformer 模型从图像生成文本
             generated_ids = trocr_model.generate(image_tensor)
             generated_text = trocr_processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
             return generated_text
