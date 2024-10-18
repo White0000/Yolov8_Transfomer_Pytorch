@@ -1,0 +1,16 @@
+numpy
+opencv-python
+pillow
+torch
+torchvision
+torchaudio
+ultralytics
+paddlepaddle
+paddleocr
+PyQt5
+matplotlib
+scipy
+tqdm
+pyyaml
+transformers
+psutil
