@@ -1,4 +1,4 @@
-# Scene Text Recognition Performance with YOLOv8 and PaddleOCR
+# Scene Text Recognition Performance with YOLOv8 and PaddleOCR(With torch Training)
 
 ![cb478cdd1d9d9280db2ca4f586c5a12](https://github.com/user-attachments/assets/b1ea2efc-59bb-4f55-8401-a42114ca0bca)
 
